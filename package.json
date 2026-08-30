@@ -11,12 +11,22 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1121.0",
+    "bcryptjs": "^3.0.3",
     "body-parser": "^2.3.0",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "helmet": "^8.3.0",
-    "morgan": "^1.11.0"
+    "joi": "^18.2.5",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.9.4",
+    "morgan": "^1.11.0",
+    "multer": "^2.3.0",
+    "uuid": "^14.0.2"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0"
   }
 }

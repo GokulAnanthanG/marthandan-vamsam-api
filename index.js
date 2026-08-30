@@ -109,13 +109,18 @@ app.get("/health", (req, res) => {
 
 
 // ============================================================
+// Database Connection
+// ============================================================
+
+const connectDB = require("./src/config/db.config");
+connectDB();
+
+// ============================================================
 // Routes
 // ============================================================
 
-// Example:
-// const userRoutes = require("./routes/user.routes");
-// app.use("/api/users", userRoutes);
-
+const apiRoutes = require("./src/routes");
+app.use("/api", apiRoutes);
 
 // ============================================================
 // 404 Handler
@@ -129,33 +134,18 @@ app.use((req, res) => {
     });
 });
 
-
 // ============================================================
 // Global Error Handler
 // ============================================================
 
-app.use((err, req, res, next) => {
-
-    console.error("ERROR:", err);
-
-    const statusCode = err.status || 500;
-
-    res.status(statusCode).json({
-        success: false,
-        message:
-            NODE_ENV === "production"
-                ? "Internal server error"
-                : err.message
-    });
-});
-
+const errorMiddleware = require("./src/middlewares/error.middleware");
+app.use(errorMiddleware);
 
 // ============================================================
 // Start Server
 // ============================================================
 
 const server = app.listen(PORT, () => {
-
     console.log("======================================");
     console.log("🚀 API SERVER STARTED");
     console.log("======================================");
@@ -164,40 +154,23 @@ const server = app.listen(PORT, () => {
     console.log(`Frontend    : ${FRONTEND_URL}`);
     console.log(`Health      : http://localhost:${PORT}/health`);
     console.log("======================================");
-
 });
-
 
 // ============================================================
 // Graceful Shutdown
 // ============================================================
 
 const shutdown = (signal) => {
-
     console.log(`\n${signal} received. Shutting down server...`);
-
     server.close(() => {
-
         console.log("HTTP server closed successfully.");
-
         process.exit(0);
-
     });
-
-    // Force shutdown after 10 seconds
     setTimeout(() => {
-
-        console.error(
-            "Could not close connections in time. Forcefully shutting down."
-        );
-
+        console.error("Could not close connections in time. Forcefully shutting down.");
         process.exit(1);
-
     }, 10000);
-
 };
 
-
-// Handle termination signals
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
