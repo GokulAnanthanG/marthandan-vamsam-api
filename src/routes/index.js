@@ -8,5 +8,6 @@ const router = express.Router();
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/family-trees', require('./familyTree.routes'));
 
 module.exports = router;
