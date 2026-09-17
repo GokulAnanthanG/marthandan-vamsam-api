@@ -18,7 +18,7 @@ const familyRelationshipSchema = new mongoose.Schema({
     },
     relationshipType: {
         type: String,
-        enum: ['PARENT_CHILD'],
+        enum: ['PARENT_CHILD', 'SPOUSE'],
         default: 'PARENT_CHILD'
     }
 }, {

@@ -172,8 +172,41 @@ class FamilyMemberService {
         }
     }
 
-    async getTreeBranch(treeId, rootMemberId, depth = 3) {
-        // Phase 8: Lazy Loading via Depth Limiting
+    async addSpouse(treeId, memberId, spouseData, createdBy) {
+        try {
+            const member = await FamilyMember.findOne({ _id: memberId, treeId, isDeleted: false });
+            if (!member) throw new ApiError(404, 'Member not found');
+
+            if (member.maritalStatus === 'SINGLE') {
+                member.maritalStatus = 'MARRIED';
+                await member.save({});
+            }
+
+            // Create Spouse
+            const spouse = new FamilyMember({
+                ...spouseData,
+                treeId,
+                maritalStatus: 'MARRIED'
+            });
+            await spouse.save({});
+
+            // Create Relationship
+            const relationship = new FamilyRelationship({
+                treeId,
+                parentMemberId: member._id,
+                childMemberId: spouse._id,
+                relationshipType: 'SPOUSE'
+            });
+            await relationship.save({});
+
+            return spouse;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getTreeBranch(treeId, rootMemberId, limit = 20) {
+        // Phase 8: Lazy Loading via Limit and Ghost Nodes
         const relationships = await FamilyRelationship.find({ treeId }).lean();
         
         let actualRootId = rootMemberId;
@@ -184,7 +217,6 @@ class FamilyMemberService {
             if (potentialRootRel) {
                 actualRootId = potentialRootRel.parentMemberId;
             } else {
-                // Fallback to any member
                 const firstMember = await FamilyMember.findOne({ treeId, isDeleted: false }).lean();
                 if (firstMember) actualRootId = firstMember._id;
             }
@@ -195,45 +227,100 @@ class FamilyMemberService {
         }
 
         const childrenMap = {};
+        const parentMap = {};
+        const spouseMap = {};
+
         for (const rel of relationships) {
             const pId = rel.parentMemberId.toString();
-            if (!childrenMap[pId]) childrenMap[pId] = [];
-            childrenMap[pId].push(rel.childMemberId.toString());
+            const cId = rel.childMemberId.toString();
+            
+            if (rel.relationshipType === 'SPOUSE') {
+                if (!spouseMap[pId]) spouseMap[pId] = [];
+                if (!spouseMap[cId]) spouseMap[cId] = [];
+                spouseMap[pId].push(cId);
+                spouseMap[cId].push(pId);
+            } else {
+                if (!childrenMap[pId]) childrenMap[pId] = [];
+                childrenMap[pId].push(cId);
+                
+                if (!parentMap[cId]) parentMap[cId] = [];
+                parentMap[cId].push(pId);
+            }
         }
 
         const memberIdsToFetch = new Set([actualRootId.toString()]);
-        let currentLevel = [actualRootId.toString()];
-        let currentDepth = 0;
+        let queue = [actualRootId.toString()];
 
-        // Ensure we load at least to the specified depth
-        while (currentLevel.length > 0 && currentDepth < depth) {
-            let nextLevel = [];
-            for (const nodeId of currentLevel) {
-                const children = childrenMap[nodeId] || [];
-                for (const child of children) {
-                    if (!memberIdsToFetch.has(child)) {
-                        memberIdsToFetch.add(child);
-                        nextLevel.push(child);
-                    }
+        // BFS to collect up to `limit` nodes (preferring children and spouses)
+        while (queue.length > 0 && memberIdsToFetch.size < limit) {
+            const currentId = queue.shift();
+            
+            // Add spouses
+            const spouses = spouseMap[currentId] || [];
+            for (const spouse of spouses) {
+                if (!memberIdsToFetch.has(spouse)) {
+                    memberIdsToFetch.add(spouse);
+                    queue.push(spouse); // we can push spouse to queue but be careful about limit
                 }
             }
-            currentLevel = nextLevel;
-            currentDepth++;
+
+            // Add children first
+            const children = childrenMap[currentId] || [];
+            for (const child of children) {
+                if (!memberIdsToFetch.has(child) && memberIdsToFetch.size < limit) {
+                    memberIdsToFetch.add(child);
+                    queue.push(child);
+                }
+            }
         }
 
-        // We still return all relationships so the frontend knows which nodes have hidden children, 
-        // but we only fetch the member profiles for the allowed depth.
+        // Fetch the full members
         const members = await FamilyMember.find({ 
             treeId, 
             _id: { $in: Array.from(memberIdsToFetch) },
             isDeleted: false 
         }).lean();
 
+        // Identify boundary nodes (parents or children not in the set) and create ghosts
+        const ghostMap = new Map();
+        
+        for (const memberId of memberIdsToFetch) {
+            const mIdStr = memberId.toString();
+            
+            // Check missing parents
+            const parents = parentMap[mIdStr] || [];
+            for (const pId of parents) {
+                if (!memberIdsToFetch.has(pId) && !ghostMap.has(pId)) {
+                    ghostMap.set(pId, {
+                        _id: pId,
+                        name: "Load Ancestor",
+                        gender: 'MALE', // Fallback, we could fetch real gender if we wanted
+                        isFadedSkeleton: true
+                    });
+                }
+            }
+            
+            // Check missing children
+            const children = childrenMap[mIdStr] || [];
+            for (const cId of children) {
+                if (!memberIdsToFetch.has(cId) && !ghostMap.has(cId)) {
+                    ghostMap.set(cId, {
+                        _id: cId,
+                        name: "Load Descendants",
+                        gender: 'MALE',
+                        isFadedSkeleton: true
+                    });
+                }
+            }
+        }
+
+        const finalMembers = [...members, ...Array.from(ghostMap.values())];
+
         return {
             treeId,
             rootMemberId: actualRootId,
-            members,
-            relationships
+            members: finalMembers,
+            relationships // returning all relationships so layout knows edges exist
         };
     }
 }

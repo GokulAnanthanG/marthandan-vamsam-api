@@ -100,6 +100,17 @@ class FamilyTreeController {
             return errorResponse(res, error.statusCode || 500, error.message);
         }
     }
+
+    async addSpouse(req, res) {
+        try {
+            const { treeId, memberId } = req.params;
+            const spouse = await FamilyMemberService.addSpouse(treeId, memberId, req.body, req.user._id);
+            await AuditLogService.logAction(req.user._id, 'MEMBER_CREATED', 'FamilyMember', spouse._id, null, spouse);
+            return successResponse(res, 201, 'Spouse added successfully', spouse);
+        } catch (error) {
+            return errorResponse(res, error.statusCode || 500, error.message);
+        }
+    }
     async deleteSubtree(req, res) {
         try {
             const { treeId, memberId } = req.params;

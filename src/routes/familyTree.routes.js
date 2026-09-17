@@ -17,6 +17,7 @@ router.post('/:treeId/members', roleMiddleware(['ADMIN', 'SUB_ADMIN', 'DATA_ENTR
 router.get('/members/:memberId', FamilyTreeController.getMember);
 router.put('/members/:memberId', roleMiddleware(['ADMIN', 'SUB_ADMIN', 'DATA_ENTRY']), FamilyTreeController.updateMember);
 router.post('/:treeId/members/:parentId/children', roleMiddleware(['ADMIN', 'SUB_ADMIN', 'DATA_ENTRY']), FamilyTreeController.addChild);
+router.post('/:treeId/members/:memberId/spouse', roleMiddleware(['ADMIN', 'SUB_ADMIN', 'DATA_ENTRY']), FamilyTreeController.addSpouse);
 router.delete('/:treeId/members/:memberId', roleMiddleware(['ADMIN', 'SUB_ADMIN']), FamilyTreeController.deleteSubtree);
 router.post('/:treeId/members/:memberId/restore-subtree', roleMiddleware(['ADMIN', 'SUB_ADMIN']), FamilyTreeController.restoreSubtree);
 router.get('/:treeId/deleted-members', roleMiddleware(['ADMIN', 'SUB_ADMIN']), FamilyTreeController.getDeletedMembers);
