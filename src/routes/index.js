@@ -12,5 +12,6 @@ router.use('/family-trees', require('./familyTree.routes'));
 router.use('/family-data-requests', require('./familyRequest.routes'));
 router.use('/special-access-permissions', require('./specialAccessPermission.routes'));
 router.use('/family-media', require('./familyMedia.routes'));
+router.use('/tree-requests', require('./treeRequest.routes'));
 
 module.exports = router;

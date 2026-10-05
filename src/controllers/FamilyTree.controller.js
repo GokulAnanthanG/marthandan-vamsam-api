@@ -53,10 +53,13 @@ class FamilyTreeController {
             let member = await FamilyMemberService.getMemberById(memberId);
             
             // Phase 4: Privacy Filtering Logic
-            const isAdminOrSub = ['ADMIN', 'SUB_ADMIN', 'DATA_ENTRY'].includes(req.user?.role);
+            const isAdminOrSub = req.user && ['ADMIN', 'SUB_ADMIN', 'DATA_ENTRY'].includes(req.user.role);
             if (!isAdminOrSub) {
                 const SpecialAccessPermissionService = require('../services/SpecialAccessPermission.service');
-                const hasAccess = await SpecialAccessPermissionService.hasAccess(req.user._id, memberId);
+                let hasAccess = false;
+                if (req.user) {
+                     hasAccess = await SpecialAccessPermissionService.hasAccess(req.user._id, memberId);
+                }
                 
                 if (!hasAccess) {
                     // Filter sensitive fields
