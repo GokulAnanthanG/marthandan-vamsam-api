@@ -44,7 +44,7 @@ const register = async (req, res, next) => {
 
 const login = async (req, res, next) => {
     try {
-        const { mobileNumber, otp } = req.body;
+        const { mobileNumber, otp, fcmToken } = req.body;
 
         // Verify OTP
         const isOtpValid = otpService.verifyOTP(otp);
@@ -60,6 +60,11 @@ const login = async (req, res, next) => {
         
         if (user.status === 'BLOCKED') {
             throw new ApiError(403, 'Your account is blocked');
+        }
+
+        if (fcmToken && user.fcmToken !== fcmToken) {
+            user.fcmToken = fcmToken;
+            await user.save();
         }
 
         // Generate tokens

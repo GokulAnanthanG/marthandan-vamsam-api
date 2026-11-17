@@ -16,6 +16,11 @@ const specialAccessPermissionSchema = new mongoose.Schema({
         ref: 'FamilyTree',
         required: true
     },
+    purpose: {
+        type: String,
+        trim: true,
+        default: ''
+    },
     allowedFields: {
         type: [String],
         default: []

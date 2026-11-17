@@ -14,16 +14,29 @@ const userSchema = new mongoose.Schema({
     },
     passwordHash: {
         type: String,
-        required: true
+        required: false
     },
     dateOfBirth: {
         type: Date,
-        required: true
+        required: false
     },
     gender: {
         type: String,
         enum: ['MALE', 'FEMALE', 'OTHER'],
-        required: true
+        required: false
+    },
+    fatherName: {
+        type: String,
+        trim: true,
+        default: null
+    },
+    fcmToken: {
+        type: String,
+        default: null
+    },
+    isPhoneVerified: {
+        type: Boolean,
+        default: false
     },
     profilePhotoUrl: {
         type: String,

@@ -4,12 +4,13 @@ const { successResponse, errorResponse } = require('../utils/apiResponse');
 class SpecialAccessPermissionController {
     async requestAccess(req, res) {
         try {
-            const { targetMemberId, treeId, allowedFields } = req.body;
+            const { targetMemberId, treeId, allowedFields, purpose } = req.body;
             const permission = await SpecialAccessPermissionService.requestAccess(
                 req.user._id,
                 targetMemberId,
                 treeId,
-                allowedFields
+                allowedFields,
+                purpose
             );
             return successResponse(res, 201, 'Access request submitted successfully', permission);
         } catch (error) {
@@ -32,7 +33,13 @@ class SpecialAccessPermissionController {
 
     async approveAccess(req, res) {
         try {
-            const permission = await SpecialAccessPermissionService.approveAccess(req.params.permissionId, req.user._id);
+            const { allowedFields, expiresAt } = req.body;
+            const permission = await SpecialAccessPermissionService.approveAccess(
+                req.params.permissionId, 
+                req.user._id,
+                allowedFields,
+                expiresAt
+            );
             return successResponse(res, 200, 'Access request approved', permission);
         } catch (error) {
             return errorResponse(res, error.statusCode || 500, error.message);

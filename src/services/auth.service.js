@@ -8,14 +8,18 @@ const registerUser = async (userData) => {
         throw new Error('Mobile number is already registered');
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(userData.password, salt);
+    // Hash password if provided
+    let passwordHash;
+    if (userData.password) {
+        const salt = await bcrypt.genSalt(10);
+        passwordHash = await bcrypt.hash(userData.password, salt);
+    }
 
     // Create user
     const newUser = await User.create({
         ...userData,
-        passwordHash
+        passwordHash,
+        isPhoneVerified: true
     });
 
     return newUser;
