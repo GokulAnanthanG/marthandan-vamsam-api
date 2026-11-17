@@ -7,6 +7,7 @@ const roleMiddleware = require('../middlewares/role.middleware');
 // Public/Guest allowed Read-only routes
 router.get('/', FamilyTreeController.getTrees);
 router.get('/:treeId/tree', FamilyTreeController.getTreeBranch);
+router.get('/:treeId/members/search', FamilyTreeController.searchMembers);
 router.get('/members/:memberId', FamilyTreeController.getMember);
 
 // Apply auth middleware to all other tree routes (mutations)

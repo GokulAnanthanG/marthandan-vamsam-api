@@ -27,9 +27,20 @@ class FamilyTreeController {
     async getTreeBranch(req, res) {
         try {
             const { treeId } = req.params;
-            const { rootMemberId } = req.query; // If null, we'll fetch the whole tree or from the main root
-            const data = await FamilyMemberService.getTreeBranch(treeId, rootMemberId);
+            const { rootMemberId, focusMemberId } = req.query; // If null, we'll fetch the whole tree or from the main root
+            const data = await FamilyMemberService.getTreeBranch(treeId, rootMemberId, 20, focusMemberId);
             return successResponse(res, 200, 'Tree branch fetched successfully', data);
+        } catch (error) {
+            return errorResponse(res, error.statusCode || 500, error.message);
+        }
+    }
+
+    async searchMembers(req, res) {
+        try {
+            const { treeId } = req.params;
+            const { q } = req.query;
+            const data = await FamilyMemberService.searchMembers(treeId, q);
+            return successResponse(res, 200, 'Search results fetched successfully', data);
         } catch (error) {
             return errorResponse(res, error.statusCode || 500, error.message);
         }

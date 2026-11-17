@@ -205,7 +205,28 @@ class FamilyMemberService {
         }
     }
 
-    async getTreeBranch(treeId, rootMemberId, limit = 20) {
+    async searchMembers(treeId, query) {
+        if (!query || !query.trim()) {
+            return [];
+        }
+
+        const trimmed = query.trim();
+        const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        const members = await FamilyMember.find({
+            treeId,
+            isDeleted: false,
+            name: { $regex: escaped, $options: 'i' }
+        })
+        .select('_id name gender photoUrl jobTitle maritalStatus')
+        .sort({ name: 1 })
+        .limit(30)
+        .lean();
+
+        return members;
+    }
+
+    async getTreeBranch(treeId, rootMemberId, limit = 20, focusMemberId = null) {
         // Phase 8: Lazy Loading via Limit and Ghost Nodes
         const relationships = await FamilyRelationship.find({ treeId }).lean();
         
@@ -249,10 +270,65 @@ class FamilyMemberService {
         }
 
         const memberIdsToFetch = new Set([actualRootId.toString()]);
+
+        // If a focusMemberId is specified (e.g. from tree search), ensure the full path
+        // from actualRootId down to focusMemberId, as well as focusMemberId's spouse and children, are included
+        if (focusMemberId) {
+            const targetStr = focusMemberId.toString();
+            memberIdsToFetch.add(targetStr);
+
+            // Add spouses of target
+            const targetSpouses = spouseMap[targetStr] || [];
+            for (const sp of targetSpouses) {
+                memberIdsToFetch.add(sp);
+            }
+
+            // Add immediate children of target and spouses
+            const targetChildren = childrenMap[targetStr] || [];
+            for (const ch of targetChildren) {
+                memberIdsToFetch.add(ch);
+            }
+            for (const sp of targetSpouses) {
+                const spChildren = childrenMap[sp] || [];
+                for (const ch of spChildren) {
+                    memberIdsToFetch.add(ch);
+                }
+            }
+
+            // Trace ancestors upwards to root
+            let curr = targetStr;
+            const visited = new Set();
+            while (curr && !visited.has(curr)) {
+                visited.add(curr);
+                memberIdsToFetch.add(curr);
+
+                const currSpouses = spouseMap[curr] || [];
+                for (const sp of currSpouses) {
+                    memberIdsToFetch.add(sp);
+                }
+
+                const parents = parentMap[curr] || [];
+                if (parents.length > 0) {
+                    curr = parents[0];
+                } else {
+                    let spouseParent = null;
+                    for (const sp of currSpouses) {
+                        const spParents = parentMap[sp] || [];
+                        if (spParents.length > 0) {
+                            spouseParent = spParents[0];
+                            break;
+                        }
+                    }
+                    curr = spouseParent;
+                }
+            }
+        }
+
         let queue = [actualRootId.toString()];
 
         // BFS to collect up to `limit` nodes (preferring children and spouses)
-        while (queue.length > 0 && memberIdsToFetch.size < limit) {
+        const effectiveLimit = limit + (focusMemberId ? 25 : 0);
+        while (queue.length > 0 && memberIdsToFetch.size < effectiveLimit) {
             const currentId = queue.shift();
             
             // Add spouses
@@ -267,7 +343,7 @@ class FamilyMemberService {
             // Add children first
             const children = childrenMap[currentId] || [];
             for (const child of children) {
-                if (!memberIdsToFetch.has(child) && memberIdsToFetch.size < limit) {
+                if (!memberIdsToFetch.has(child) && memberIdsToFetch.size < effectiveLimit) {
                     memberIdsToFetch.add(child);
                     queue.push(child);
                 }

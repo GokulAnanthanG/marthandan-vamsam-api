@@ -99,4 +99,6 @@ const familyMemberSchema = new mongoose.Schema({
     timestamps: true
 });
 
+familyMemberSchema.index({ treeId: 1, isDeleted: 1, name: 1 });
+
 module.exports = mongoose.model('FamilyMember', familyMemberSchema);
