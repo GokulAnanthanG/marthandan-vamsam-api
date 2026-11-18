@@ -17,7 +17,7 @@ class FamilyTreeService {
     }
     
     async getAllTrees() {
-        return await FamilyTree.find({ status: 'ACTIVE' });
+        return await FamilyTree.find({ status: { $ne: 'INACTIVE' } }).sort({ createdAt: 1 });
     }
 }
 
