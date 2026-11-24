@@ -28,7 +28,8 @@ class FamilyTreeController {
         try {
             const { treeId } = req.params;
             const { rootMemberId, focusMemberId } = req.query; // If null, we'll fetch the whole tree or from the main root
-            const data = await FamilyMemberService.getTreeBranch(treeId, rootMemberId, 20, focusMemberId);
+            const limit = parseInt(req.query.limit) || 100;
+            const data = await FamilyMemberService.getTreeBranch(treeId, rootMemberId, limit, focusMemberId);
             return successResponse(res, 200, 'Tree branch fetched successfully', data);
         } catch (error) {
             return errorResponse(res, error.statusCode || 500, error.message);

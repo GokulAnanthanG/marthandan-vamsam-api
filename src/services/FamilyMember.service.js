@@ -226,7 +226,7 @@ class FamilyMemberService {
         return members;
     }
 
-    async getTreeBranch(treeId, rootMemberId, limit = 20, focusMemberId = null) {
+    async getTreeBranch(treeId, rootMemberId, limit = 100, focusMemberId = null) {
         // Phase 8: Lazy Loading via Limit and Ghost Nodes
         const relationships = await FamilyRelationship.find({ treeId }).lean();
         
@@ -271,8 +271,8 @@ class FamilyMemberService {
 
         const memberIdsToFetch = new Set([actualRootId.toString()]);
 
-        // If a focusMemberId is specified (e.g. from tree search), ensure the full path
-        // from actualRootId down to focusMemberId, as well as focusMemberId's spouse and children, are included
+        // If a focusMemberId is specified (e.g. from tree search or after adding a child), ensure the full path
+        // from actualRootId down to focusMemberId, as well as focusMemberId's spouse, children, and siblings, are included
         if (focusMemberId) {
             const targetStr = focusMemberId.toString();
             memberIdsToFetch.add(targetStr);
@@ -292,6 +292,15 @@ class FamilyMemberService {
                 const spChildren = childrenMap[sp] || [];
                 for (const ch of spChildren) {
                     memberIdsToFetch.add(ch);
+                }
+            }
+
+            // Also ensure siblings of target are fetched so all children under the parent are complete
+            const targetParents = parentMap[targetStr] || [];
+            for (const pId of targetParents) {
+                const siblings = childrenMap[pId] || [];
+                for (const sibId of siblings) {
+                    memberIdsToFetch.add(sibId);
                 }
             }
 
@@ -327,7 +336,7 @@ class FamilyMemberService {
         let queue = [actualRootId.toString()];
 
         // BFS to collect up to `limit` nodes (preferring children and spouses)
-        const effectiveLimit = limit + (focusMemberId ? 25 : 0);
+        const effectiveLimit = Math.max(limit, memberIdsToFetch.size) + (focusMemberId ? 50 : 0);
         while (queue.length > 0 && memberIdsToFetch.size < effectiveLimit) {
             const currentId = queue.shift();
             
@@ -340,10 +349,10 @@ class FamilyMemberService {
                 }
             }
 
-            // Add children first
+            // Add ALL immediate children together so sibling groups are never partially split into ghosts
             const children = childrenMap[currentId] || [];
             for (const child of children) {
-                if (!memberIdsToFetch.has(child) && memberIdsToFetch.size < effectiveLimit) {
+                if (!memberIdsToFetch.has(child)) {
                     memberIdsToFetch.add(child);
                     queue.push(child);
                 }
