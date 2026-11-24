@@ -71,6 +71,36 @@ const userSchema = new mongoose.Schema({
         trim: true,
         default: null
     },
+    businessType: {
+        type: String,
+        trim: true,
+        default: null
+    },
+    fieldOfWork: {
+        type: String,
+        trim: true,
+        default: null
+    },
+    companyName: {
+        type: String,
+        trim: true,
+        default: null
+    },
+    jobTitle: {
+        type: String,
+        trim: true,
+        default: null
+    },
+    workAddress: {
+        type: String,
+        trim: true,
+        default: null
+    },
+    profileType: {
+        type: String,
+        enum: ['GENERAL', 'BUSINESS', 'WORK', 'BOTH'],
+        default: 'GENERAL'
+    },
     role: {
         type: String,
         enum: ['ADMIN', 'SUB_ADMIN', 'NORMAL_USER', 'DATA_ENTRY'],

@@ -14,5 +14,10 @@ router.use('/special-access-permissions', require('./specialAccessPermission.rou
 router.use('/family-media', require('./familyMedia.routes'));
 router.use('/tree-requests', require('./treeRequest.routes'));
 router.use('/events', require('./Event.routes'));
+router.use('/access-requests', require('./accessRequest.routes'));
+router.use('/notifications', require('./notification.routes'));
+router.use('/houses', require('./house.routes'));
+router.use('/business-work', require('./businessWork.routes'));
+router.use('/matrimonial', require('./matrimonial.routes'));
 
 module.exports = router;

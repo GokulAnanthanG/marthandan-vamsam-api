@@ -14,6 +14,48 @@ const getProfile = async (req, res, next) => {
     }
 };
 
+const updateProfile = async (req, res, next) => {
+    try {
+        const allowedUpdates = [
+            'fullName',
+            'fatherName',
+            'residentialAddress',
+            'whatsappNumber',
+            'profileType',
+            'businessName',
+            'businessType',
+            'businessAddress',
+            'occupation',
+            'fieldOfWork',
+            'companyName',
+            'jobTitle',
+            'workAddress'
+        ];
+
+        const updates = {};
+        for (const key of allowedUpdates) {
+            if (req.body[key] !== undefined) {
+                updates[key] = req.body[key];
+            }
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            { $set: updates },
+            { new: true }
+        ).select('-passwordHash');
+
+        if (!user) {
+            throw new ApiError(404, 'User not found');
+        }
+
+        return successResponse(res, 200, 'Profile updated successfully', { user });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
-    getProfile
+    getProfile,
+    updateProfile
 };

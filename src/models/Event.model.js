@@ -6,6 +6,12 @@ const eventSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    category: {
+        type: String,
+        enum: ['MARRIAGE', 'BIRTHDAY', 'HOUSEWARMING', 'ANNIVERSARY', 'OTHER'],
+        default: 'OTHER',
+        required: true
+    },
     date: {
         type: Date,
         required: true

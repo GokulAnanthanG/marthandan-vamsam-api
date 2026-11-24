@@ -39,6 +39,16 @@ const familyMemberSchema = new mongoose.Schema({
         trim: true,
         default: null
     },
+    homeGoogleMapUrl: {
+        type: String,
+        trim: true,
+        default: null
+    },
+    profileType: {
+        type: String,
+        enum: ['GENERAL', 'BUSINESS', 'WORK', 'BOTH', 'STUDENT', 'HOMEMAKER', 'OTHER'],
+        default: 'GENERAL'
+    },
     occupationType: {
         type: String,
         enum: ['JOB', 'BUSINESS', 'SERVICE', 'FARMER', 'OTHER', null],
@@ -54,7 +64,17 @@ const familyMemberSchema = new mongoose.Schema({
         trim: true,
         default: null
     },
+    fieldOfWork: {
+        type: String,
+        trim: true,
+        default: null
+    },
     businessName: {
+        type: String,
+        trim: true,
+        default: null
+    },
+    businessType: {
         type: String,
         trim: true,
         default: null
@@ -65,6 +85,11 @@ const familyMemberSchema = new mongoose.Schema({
         default: null
     },
     businessAddress: {
+        type: String,
+        trim: true,
+        default: null
+    },
+    businessGoogleMapUrl: {
         type: String,
         trim: true,
         default: null

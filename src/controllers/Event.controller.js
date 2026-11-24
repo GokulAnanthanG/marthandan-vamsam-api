@@ -4,7 +4,7 @@ const ApiError = require('../utils/apiError');
 
 const createEvent = async (req, res, next) => {
     try {
-        const { eventName, date, time, location, description } = req.body;
+        const { eventName, date, time, location, description, category } = req.body;
         
         // If Admin/Sub Admin, they can create approved events directly.
         // For now, let's set it to Pending unless logic requires otherwise.
@@ -13,12 +13,16 @@ const createEvent = async (req, res, next) => {
             status = 'Approved';
         }
 
+        const validCategories = ['MARRIAGE', 'BIRTHDAY', 'HOUSEWARMING', 'ANNIVERSARY', 'OTHER'];
+        const eventCategory = validCategories.includes(category) ? category : 'OTHER';
+
         const newEvent = await Event.create({
             eventName,
             date,
             time,
             location,
             description,
+            category: eventCategory,
             addedBy: req.user.id,
             status
         });
@@ -31,7 +35,7 @@ const createEvent = async (req, res, next) => {
 
 const getEvents = async (req, res, next) => {
     try {
-        const { date, status } = req.query;
+        const { date, status, category } = req.query;
         
         let query = {};
         if (status) {
@@ -39,6 +43,10 @@ const getEvents = async (req, res, next) => {
         } else if (req.user.role !== 'ADMIN' && req.user.role !== 'SUB_ADMIN') {
             // Normal users only see approved events
             query.status = 'Approved';
+        }
+
+        if (category) {
+            query.category = category;
         }
 
         if (date) {
